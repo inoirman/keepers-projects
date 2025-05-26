@@ -83,7 +83,12 @@ function AppContent({ children }: { children: React.ReactNode }) {
 			<ToastContainer
 				toasts={toasts}
 				onDismissToast={dismissToast}
-				position='bottom-right'
+				position='center-center'
+			/>
+			<ToastContainer
+				toasts={toasts}
+				onDismissToast={dismissToast}
+				position='top-right'
 			/>
 		</>
 	)

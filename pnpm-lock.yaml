@@ -32,6 +32,9 @@ importers:
       '@service-suite/auth-logic':
         specifier: workspace:*
         version: link:../../packages/auth-logic
+      '@service-suite/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@service-suite/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -102,6 +105,15 @@ importers:
         version: 5.8.3
 
   packages/config/tsconfig: {}
+
+  packages/types:
+    devDependencies:
+      '@service-suite/tsconfig':
+        specifier: workspace:*
+        version: link:../config/tsconfig
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
 
   packages/ui:
     dependencies:

@@ -11,6 +11,7 @@
 	"dependencies": {
 		"@service-suite/auth-logic": "workspace:*",
 		"@service-suite/ui": "workspace:*",
+		"@service-suite/types": "workspace:*",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.49.8",
 		"next": "15.1.8",

@@ -36,6 +36,20 @@ const config: Config = {
 				'toast-warning-bg': 'rgb(var(--toast-warning-bg-rgb) / <alpha-value>)',
 				'toast-warning-text':
 					'rgb(var(--toast-warning-text-rgb) / <alpha-value>)',
+				'toast-confirm-bg':
+					'rgb(var(--color-toast-confirm-bg-rgb) / <alpha-value>)',
+				'toast-confirm-text':
+					'rgb(var(--color-toast-confirm-text-rgb) / <alpha-value>)',
+				'toast-confirm-icon-bg':
+					'rgb(var(--color-toast-confirm-icon-bg-rgb) / <alpha-value>)',
+				'toast-confirm-icon-text':
+					'rgb(var(--color-toast-confirm-icon-text-rgb) / <alpha-value>)',
+			},
+			keyframes: {
+				'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+			},
+			animation: {
+				'fade-in': 'fade-in 0.25s cubic-bezier(0.4,0,0.2,1) both',
 			},
 		},
 	},

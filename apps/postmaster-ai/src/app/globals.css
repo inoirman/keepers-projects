@@ -33,6 +33,14 @@
 	--toast-info-text-rgb: 255 255 255; /* Белый */
 	--toast-warning-bg-rgb: 245 158 11; /* Желтый (Tailwind's yellow-500) */
 	--toast-warning-text-rgb: 17 24 39; /* Темный текст для желтого фона */
+
+	/* Цвета для ToastConfirm (акцент на основной цвет) */
+	--color-toast-confirm-bg-rgb: 239 246 255; /* Tailwind's blue-50 (очень светло-синий) */
+	--color-toast-confirm-text-rgb: 30 64 175; /* Tailwind's blue-800 (темно-синий для текста) */
+
+	/* Для иконки warning (можно оставить как в Варианте 1 или) */
+	--color-toast-confirm-icon-bg-rgb: 254 243 199; /* Tailwind's amber-100 */
+	--color-toast-confirm-icon-text-rgb: 217 119 6; /* Tailwind's amber-600 */
 }
 
 /* 

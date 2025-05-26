@@ -1,88 +1,82 @@
 // apps/postmaster-ai/src/app/documents/[id]/page.tsx
 'use client'
 
-import { createSupabaseBrowserClient } from '@/lib/supabase/client' // Для подписки или запросов
-import { useAuth } from '@service-suite/auth-logic'
-import { useToasts } from '@service-suite/ui'
-import {
-	useParams,
-	useRouter, // useParams для получения [id] из URL
-} from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { useAuth } from '@service-suite/auth-logic' // Убедись, что этот путь правильный
+import type {
+	Document as DocumentType,
+	ReplyDraft as ReplyDraftType,
+} from '@service-suite/types' // Используем центральные типы
+import { useToasts } from '@service-suite/ui' // Убедись, что этот путь правильный
+import { useParams, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 
-// Тип для документа (можно будет вынести в общий @service-suite/types)
-interface DocumentType {
-	id: string
-	title?: string | null
-	original_text: string
-	status: string
-	analysis_summary?: string | null
-	analysis_detailed?: string | null // jsonb
-	analysis_recommendations?: string | null // jsonb
-	// ... другие поля из твоей таблицы documents
-	created_at: string
-}
+// Импорт новых компонентов
+import { AnalysisSidebar } from './components/AnalysisSidebar'
+import { DocumentHeader } from './components/DocumentHeader'
+import { DraftingArea } from './components/DraftingArea'
+import { FinalReplySection } from './components/FinalReplySection'
 
 export default function DocumentDetailPage() {
-	const params = useParams() // { id: '...' }
-	const documentId = params.id as string // Получаем ID документа из URL
+	const params = useParams()
+	const documentId = params.id as string
 
 	const router = useRouter()
 	const { isAuthenticated, isLoading: authLoading, user } = useAuth()
-	const { addToast } = useToasts()
+	const { addToast, dismissToast } = useToasts()
 	const supabase = createSupabaseBrowserClient()
 
 	const [document, setDocument] = useState<DocumentType | null>(null)
 	const [isLoadingDoc, setIsLoadingDoc] = useState(true)
 	const [errorDoc, setErrorDoc] = useState<string | null>(null)
 
-	// Загрузка документа при монтировании и подписка на изменения
-	useEffect(() => {
-		if (!documentId || !isAuthenticated) return // Ждем ID и авторизацию
+	const [drafts, setDrafts] = useState<ReplyDraftType[]>([])
+	const [currentDraft, setCurrentDraft] = useState<ReplyDraftType | null>(null) // Черновик, который является текущим для отображения/работы
 
+	const [userIdea, setUserIdea] = useState('')
+	const [isSubmitting, setIsSubmitting] = useState(false) // Общий флаг для асинхронных операций
+
+	// Загрузка документа и подписка
+	useEffect(() => {
+		if (!documentId || !isAuthenticated || !user?.id) return
 		setIsLoadingDoc(true)
 
-		// Функция для загрузки документа
 		const fetchDocument = async () => {
 			const { data, error } = await supabase
 				.from('documents')
-				.select('*') // Загружаем все поля
+				.select('*')
 				.eq('id', documentId)
-				.eq('user_id', user!.id) // Убеждаемся, что документ принадлежит пользователю
+				.eq('user_id', user.id)
 				.single()
 
 			if (error) {
 				console.error('Error fetching document:', error)
-				setErrorDoc(error.message)
-				addToast({
-					message: `Ошибка загрузки документа: ${error.message}`,
-					type: 'error',
-				})
-				// router.push('/documents'); // Можно вернуть на список, если документ не найден или нет прав
+				setErrorDoc('Ошибка загрузки: ' + error.message)
+				addToast({ message: `Ошибка загрузки документа.`, type: 'error' })
+				// router.push('/documents'); // Раскомментируй, если нужно
 			} else if (data) {
-				setDocument(data as DocumentType)
+				setDocument(data)
 				setErrorDoc(null)
 			} else {
 				setErrorDoc('Документ не найден или у вас нет к нему доступа.')
 				addToast({ message: 'Документ не найден.', type: 'info' })
-				// router.push('/documents');
+				// router.push('/documents'); // Раскомментируй, если нужно
 			}
 			setIsLoadingDoc(false)
 		}
 
 		fetchDocument()
 
-		// Подписка на изменения в таблице documents для этого документа
 		const channel = supabase
 			.channel(`document-${documentId}`)
-			.on(
+			.on<DocumentType>( // Явно указываем тип для payload
 				'postgres_changes',
 				{
 					event: 'UPDATE',
 					schema: 'public',
 					table: 'documents',
 					filter: `id=eq.${documentId}`,
-				},
+				}, // Добавлен filter
 				payload => {
 					console.log('Document updated via Realtime:', payload.new)
 					addToast({
@@ -90,73 +84,214 @@ export default function DocumentDetailPage() {
 						type: 'info',
 						duration: 2000,
 					})
-					setDocument(payload.new as DocumentType) // Обновляем состояние документа
-					// Здесь можно проверить payload.new.status и обновить UI соответственно
+					setDocument(payload.new)
 					if (payload.new.status === 'analysis_completed') {
 						addToast({ message: 'Анализ текста завершен!', type: 'success' })
 					}
+					// Можно добавить обработку других статусов
 				}
 			)
 			.subscribe((status, err) => {
-				if (status === 'SUBSCRIBED') {
-					console.log(
-						`Subscribed to Realtime updates for document ${documentId}`
-					)
-				}
-				if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+				if (status === 'SUBSCRIBED')
+					console.log(`Subscribed to Realtime for document ${documentId}`)
+				if (err)
 					console.error(
 						`Realtime subscription error for document ${documentId}:`,
-						err || status
+						err
 					)
-					addToast({
-						message: 'Ошибка Realtime-подписки на обновления документа.',
-						type: 'warning',
-					})
-				}
 			})
 
-		// Отписка при размонтировании компонента
 		return () => {
 			supabase.removeChannel(channel)
-			console.log(
-				`Unsubscribed from Realtime updates for document ${documentId}`
-			)
 		}
-	}, [documentId, isAuthenticated, supabase, user, addToast, router])
+	}, [documentId, isAuthenticated, user?.id, supabase, addToast, router])
 
-	// Защита роута на клиенте
+	// Загрузка и обновление черновиков
+	const fetchAndSetDrafts = useCallback(async () => {
+		if (!documentId || !user?.id) return
+		const { data, error } = await supabase
+			.from('reply_drafts')
+			.select('*')
+			.eq('document_id', documentId)
+			.eq('user_id', user.id) // Добавляем user_id для безопасности/RLS
+			.order('iteration_number', { ascending: true })
+
+		if (error) {
+			console.error('Error fetching drafts:', error)
+			addToast({
+				message: `Ошибка загрузки черновиков: ${error.message}`,
+				type: 'error',
+			})
+			setDrafts([])
+		} else {
+			setDrafts(data || [])
+		}
+	}, [documentId, user?.id, supabase, addToast])
+
+	useEffect(() => {
+		fetchAndSetDrafts()
+	}, [fetchAndSetDrafts])
+
+	// Установка currentDraft на основе document.current_reply_draft_id или последнего из списка
+	useEffect(() => {
+		if (document && drafts.length > 0) {
+			const activeDraft =
+				drafts.find(d => d.id === document.current_reply_draft_id) ||
+				drafts[drafts.length - 1]
+			setCurrentDraft(activeDraft)
+		} else if (document && drafts.length === 0) {
+			setCurrentDraft(null) // Если документ есть, а черновиков нет
+		}
+	}, [document, drafts])
+
+	// Защита роута
 	useEffect(() => {
 		if (!authLoading && !isAuthenticated) {
 			router.replace(`/login?redirect=/documents/${documentId}`)
 		}
 	}, [authLoading, isAuthenticated, router, documentId])
 
-	if (authLoading || isLoadingDoc) {
+	const handleCreateDraft = async () => {
+		if (!document || !userIdea.trim()) return
+		setIsSubmitting(true)
+		try {
+			const response = await fetch('/api/drafts/create', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					document_id: document.id,
+					user_idea_for_reply: userIdea,
+				}),
+			})
+			const result = await response.json() // Предполагаем, что result может содержать { data: ..., error: { message: ... } }
+
+			if (response.ok && result.data) {
+				// Проверяем и data
+				addToast({
+					message: 'Запрос на черновик отправлен, ожидайте генерации.',
+					type: 'success',
+				})
+				setUserIdea('')
+			} else {
+				// Если есть result.error и у него есть message, используем его
+				const errorMessage =
+					result.error?.message || 'Неизвестная ошибка при создании черновика.'
+				addToast({
+					message: `Ошибка создания черновика: ${errorMessage}`,
+					type: 'error',
+				})
+			}
+		} catch (error: unknown) {
+			// ИЗМЕНЕНО: error: unknown
+			let errorMessage = 'Произошла сетевая ошибка или ошибка сервера.'
+			if (error instanceof Error) {
+				errorMessage = error.message // Безопасный доступ к свойству message
+			}
+			addToast({ message: `Ошибка: ${errorMessage}`, type: 'error' })
+			console.error('Draft creation error:', error) // Логируем всю ошибку для отладки
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
+	const handleGenerateFinalAnswer = async (draftToFinalize: ReplyDraftType) => {
+		if (!draftToFinalize || !document?.id) return
+		setIsSubmitting(true)
+		try {
+			const response = await fetch('/api/drafts/finalize', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					draft_id: draftToFinalize.id,
+					document_id: document.id,
+				}),
+			})
+			const result = await response.json() // Аналогично предполагаем структуру ответа
+
+			if (response.ok && result.data?.document) {
+				// Проверяем и data.document
+				addToast({
+					message: 'Запрос на финальный ответ отправлен.',
+					type: 'success',
+				})
+			} else {
+				const errorMessage =
+					result.error?.message || 'Неизвестная ошибка при генерации ответа.'
+				addToast({
+					message: `Ошибка генерации ответа: ${errorMessage}`,
+					type: 'error',
+				})
+			}
+		} catch (error: unknown) {
+			// ИЗМЕНЕНО: error: unknown
+			let errorMessage = 'Произошла сетевая ошибка или ошибка сервера.'
+			if (error instanceof Error) {
+				errorMessage = error.message
+			}
+			addToast({ message: `Ошибка: ${errorMessage}`, type: 'error' })
+			console.error('Generate final answer error:', error)
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
+	const handleSelectDraftAsFinalWithConfirm = (draft: ReplyDraftType) => {
+		addToast({
+			variant: 'confirm', // Убедитесь, что ваш useToasts это поддерживает
+			message:
+				'Сгенерировать итоговое письмо на базе выбранного черновика? Это действие необратимо.',
+			type: 'warning',
+			onConfirm: toastId => {
+				dismissToast(toastId)
+				handleGenerateFinalAnswer(draft)
+			},
+			onCancel: dismissToast,
+		})
+	}
+
+	const handleCopyToClipboard = (text: string) => {
+		if (!text) {
+			addToast({ message: 'Нет текста для копирования.', type: 'warning' })
+			return
+		}
+		navigator.clipboard
+			.writeText(text)
+			.then(() =>
+				addToast({
+					message: 'Текст скопирован!',
+					type: 'success',
+					duration: 2000,
+				})
+			)
+			.catch(() =>
+				addToast({ message: 'Ошибка копирования в буфер.', type: 'error' })
+			)
+	}
+
+	// Рендеринг состояний загрузки/ошибок
+	if (authLoading || (isLoadingDoc && !document)) {
+		// Показываем загрузку, если нет документа Идет загрузка
 		return (
 			<div className='py-10 text-center text-text-muted'>
-				Загрузка документа...
+				Загрузка данных документа...
 			</div>
 		)
 	}
-
-	if (!isAuthenticated) {
-		// Уже должно быть обработано useEffect выше, но для надежности
+	if (!isAuthenticated && !authLoading) {
+		// Если загрузка авторизации завершена и не авторизован
 		return (
 			<div className='py-10 text-center text-text-muted'>
 				Для просмотра документа необходимо войти.
 			</div>
 		)
 	}
-
 	if (errorDoc) {
 		return (
 			<div className='py-10 text-center text-red-500'>Ошибка: {errorDoc}</div>
 		)
 	}
-
 	if (!document) {
-		// Это состояние может быть, если документ еще не загружен, или не найден
-		// isLoadingDoc должно было это покрыть, но для полноты картины
+		// Если после всех проверок документа все еще нет
 		return (
 			<div className='py-10 text-center text-text-muted'>
 				Документ не найден.
@@ -166,92 +301,35 @@ export default function DocumentDetailPage() {
 
 	// === ОСНОВНОЙ UI СТРАНИЦЫ ДОКУМЕНТА ===
 	return (
-		<div className='py-6 sm:py-8'>
-			<div className='mb-6'>
-				<h1 className='text-2xl sm:text-3xl font-bold text-text-base break-all'>
-					{document.title || `Документ #${document.id.substring(0, 8)}...`}
-				</h1>
-				<p className='text-sm text-text-muted'>
-					Статус:{' '}
-					<span
-						className={`font-semibold ${document.status === 'pending_analysis' ? 'text-yellow-600' : document.status === 'analysis_completed' ? 'text-green-600' : ''}`}
-					>
-						{document.status}
-					</span>
-				</p>
-			</div>
+		<div className='container mx-auto px-2 sm:px-4 py-6 sm:py-8'>
+			<DocumentHeader document={document} />
 
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-				{/* Колонка с исходным текстом и формой для ответа */}
-				<div className='md:col-span-2 space-y-6'>
-					<section className='bg-surface p-4 sm:p-6 rounded-lg shadow-lg'>
-						<h2 className='text-lg font-semibold text-text-base mb-3'>
-							Исходный текст
-						</h2>
-						<div className='prose prose-sm max-w-none bg-background p-3 rounded border border-border whitespace-pre-wrap'>
-							{/* whitespace-pre-wrap для сохранения пробелов и переносов */}
-							{document.original_text}
-						</div>
-					</section>
+			<div className='grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8'>
+				<main className='lg:col-span-2 space-y-6'>
+					{/* Область для различных действий в зависимости от статуса */}
+					<DraftingArea
+						document={document}
+						currentDraft={currentDraft}
+						draftsCount={drafts.length}
+						userIdea={userIdea}
+						onUserIdeaChange={setUserIdea}
+						onSubmitDraft={handleCreateDraft}
+						onFinalizeDraft={handleGenerateFinalAnswer} // Передаем сюда, если текущий черновик выбран для финализации из этой области
+						isSubmitting={isSubmitting}
+					/>
+					<FinalReplySection
+						document={document}
+						drafts={drafts}
+						onCopyToClipboard={handleCopyToClipboard}
+					/>
+				</main>
 
-					{/* Здесь будут формы для идеи ответа, правок и т.д. в зависимости от статуса */}
-					{document.status === 'analysis_completed' && (
-						<section className='bg-surface p-4 sm:p-6 rounded-lg shadow-lg'>
-							<h2 className='text-lg font-semibold text-text-base mb-3'>
-								Ваша идея для ответа
-							</h2>
-							{/* ... форма для идеи ответа ... */}
-							<textarea
-								className='mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm bg-background text-text-base'
-								rows={5}
-								placeholder='Напишите здесь основные тезисы вашего ответа...'
-							></textarea>
-							<button className='mt-3 px-4 py-2 bg-primary text-text-on-primary rounded-md hover:opacity-90'>
-								Сгенерировать черновик
-							</button>
-						</section>
-					)}
-				</div>
-
-				{/* Боковая панель с результатами анализа */}
-				<aside className='space-y-6'>
-					<section className='bg-surface p-4 sm:p-6 rounded-lg shadow-lg'>
-						<h2 className='text-lg font-semibold text-text-base mb-3'>
-							Анализ документа
-						</h2>
-						{document.status === 'pending_analysis' && (
-							<p className='text-text-muted italic'>
-								Анализ выполняется, пожалуйста, подождите...
-							</p>
-						)}
-						{document.status === 'analysis_completed' && (
-							<>
-								{document.analysis_summary && (
-									<div className='mb-4'>
-										<h3 className='font-medium text-text-base mb-1'>
-											Краткий смысл:
-										</h3>
-										<p className='text-sm text-text-muted'>
-											{document.analysis_summary}
-										</p>
-									</div>
-								)}
-								{/* Здесь будет отображение analysis_detailed и analysis_recommendations */}
-								{/* Например, если они JSONB: <pre>{JSON.stringify(document.analysis_detailed, null, 2)}</pre> */}
-								<p className='text-sm text-text-muted italic'>
-									(Здесь будут подробности и рекомендации)
-								</p>
-							</>
-						)}
-						{document.status !== 'pending_analysis' &&
-							document.status !== 'analysis_completed' &&
-							!document.analysis_summary && (
-								<p className='text-text-muted italic'>
-									Информация об анализе отсутствует для текущего статуса.
-								</p>
-							)}
-					</section>
-				</aside>
+				<AnalysisSidebar
+					document={document}
+					drafts={drafts}
+					currentDraft={currentDraft}
+					onSelectDraftAsFinal={handleSelectDraftAsFinalWithConfirm}
+				/>
 			</div>
 		</div>
 	)
