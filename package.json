@@ -1,0 +1,23 @@
+{
+	"name": "service-suite",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "turbo run dev",
+		"build": "turbo run build",
+		"lint": "turbo run lint",
+		"format": "prettier --write \"**/*.{js,ts,jsx,tsx,json,md,yml,yaml,html}\""
+	},
+	"devDependencies": {
+		"@types/node": "^22.15.21",
+		"@types/react": "^19.1.5",
+		"@types/react-dom": "^19.1.5",
+		"prettier": "^3.5.3",
+		"turbo": "^2.5.3",
+		"typescript": "^5.8.3"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@9.15.4"
+}

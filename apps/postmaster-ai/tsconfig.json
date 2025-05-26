@@ -1,0 +1,21 @@
+{
+	"extends": "@service-suite/tsconfig/nextjs.json",
+	"compilerOptions": {
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": [
+		"next-env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts",
+		"src"
+	],
+	"exclude": ["node_modules"]
+}

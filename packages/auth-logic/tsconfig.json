@@ -1,0 +1,14 @@
+{
+	"extends": "@service-suite/tsconfig/base.json",
+	"compilerOptions": {
+		"lib": ["ES2021"],
+		"module": "ESNext",
+		"declaration": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["src/**/*.ts"], // .tsx не нужен, если нет React-компонентов
+	"exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,48 @@
+/* apps/postmaster-ai/src/app/globals.css */
+
+/* Сначала идут стандартные импорты Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Теперь определяем наши CSS переменные для цветов в :root (для всего документа) */
+:root {
+	/* Основные цвета темы (значения - это компоненты R G B, разделенные пробелом) */
+	/* Это позволяет Tailwind использовать их с прозрачностью, например, bg-primary/50 */
+	--color-primary-rgb: 59 130 246; /* Пример: синий (Tailwind's blue-500) */
+	--color-secondary-rgb: 139 92 246; /* Пример: фиолетовый (Tailwind's violet-500) */
+
+	/* Цвета текста */
+	--color-text-base-rgb: 17 24 39; /* Пример: очень темный серый (Tailwind's gray-900) */
+	--color-text-muted-rgb: 107 114 128; /* Пример: серый (Tailwind's gray-500) */
+	--color-text-on-primary-rgb: 255 255 255; /* Пример: белый текст на основном цвете */
+
+	/* Цвета фона */
+	--color-background-rgb: 255 255 255; /* Пример: белый */
+	--color-surface-rgb: 249 250 251; /* Пример: очень светлый серый (Tailwind's gray-50) для "поверхностей" */
+
+	/* Цвета границ */
+	--color-border-rgb: 229 231 235; /* Пример: светлый серый (Tailwind's gray-200) */
+
+	/* Цвета для уведомлений (тостов) */
+	--toast-success-bg-rgb: 16 185 129; /* Пример: зеленый (Tailwind's green-500) */
+	--toast-success-text-rgb: 255 255 255; /* Белый */
+	--toast-error-bg-rgb: 239 68 68; /* Пример: красный (Tailwind's red-500) */
+	--toast-error-text-rgb: 255 255 255; /* Белый */
+	--toast-info-bg-rgb: 59 130 246; /* Синий */
+	--toast-info-text-rgb: 255 255 255; /* Белый */
+	--toast-warning-bg-rgb: 245 158 11; /* Желтый (Tailwind's yellow-500) */
+	--toast-warning-text-rgb: 17 24 39; /* Темный текст для желтого фона */
+}
+
+/* 
+  Опционально: Если ты захочешь темную тему, ты сможешь определить ее так:
+  .dark {
+    --color-primary-rgb: 96 165 250;   // Более светлый синий для темной темы
+    --color-text-base-rgb: 229 231 235;   // Светло-серый текст
+    --color-background-rgb: 17 24 39;    // Темно-серый фон
+    --color-surface-rgb: 31 41 55;      // Еще темнее серый для поверхностей
+    --color-border-rgb: 55 65 81;       // Темная граница
+    // ... и так далее для остальных цветов
+  }
+*/
