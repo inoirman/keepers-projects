@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 			.eq('id', draft.id)
 
 		// ---- ВЫЗЫВАЕМ АВТОМАТИЗАЦИЮ (n8n) ----
-		const n8nWebhookUrl = process.env.NEXT_N8N_FINALIZE_WEBHOOK_URL
+		const n8nWebhookUrl = process.env.NEXT_N8N_ANALYZE_WEBHOOK_URL
 		if (n8nWebhookUrl) {
 			try {
 				await fetch(n8nWebhookUrl, {

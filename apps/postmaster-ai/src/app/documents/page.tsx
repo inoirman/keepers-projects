@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'
 
 export default function DocumentsPage() {
 	const router = useRouter()
-	const { isAuthenticated, isLoading: authLoading, user } = useAuth()
+	const { isAuthenticated, isLoading: authLoading, user, profile } = useAuth()
 	const { addToast } = useToasts()
 	const supabase = createSupabaseBrowserClient()
 
@@ -98,6 +98,10 @@ export default function DocumentsPage() {
 		}
 	}, [authLoading, isAuthenticated, user, supabase, addToast, router]) // Добавил router в зависимости, если используется внутри useEffect
 
+	const limitDocs = profile?.documents_limit ?? 3
+	const usedDocs = documents.length
+	const limitReached = usedDocs >= limitDocs
+
 	if (
 		authLoading ||
 		(isAuthenticated && isLoadingDocs && documents.length === 0)
@@ -138,12 +142,26 @@ export default function DocumentsPage() {
 				<h1 className='text-2xl sm:text-3xl font-bold text-text-base'>
 					Мои документы
 				</h1>
-				<Link
-					href='/documents/new'
-					className='px-4 py-2 bg-primary text-text-on-primary rounded-md hover:opacity-90 transition-opacity text-sm font-medium shadow-sm'
-				>
-					Создать новый документ
-				</Link>
+				<div className='flex flex-col items-end gap-2'>
+					<div className='text-sm text-text-muted'>
+						Использовано документов: <b>{usedDocs}</b> из <b>{limitDocs}</b>
+					</div>
+					{!limitReached ? (
+						<Link
+							href='/documents/new'
+							className='px-4 py-2 bg-primary text-text-on-primary rounded-md hover:opacity-90 transition-opacity text-sm font-medium shadow-sm'
+						>
+							Создать новый документ
+						</Link>
+					) : (
+						<Link
+							href='/billing'
+							className='px-4 py-2 bg-yellow-500 text-white rounded-md font-medium hover:bg-yellow-600 transition'
+						>
+							Лимит исчерпан — пополнить/запросить лимит
+						</Link>
+					)}
+				</div>
 			</div>
 
 			{documents.length > 0 ? (

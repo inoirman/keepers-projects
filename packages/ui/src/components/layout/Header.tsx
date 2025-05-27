@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
 									className='hover:opacity-80 transition-opacity'
 									aria-label='Профиль'
 								>
-									{user.name || 'Профиль'}
+									Личный кабинет
 								</button>
 							)}
 							{navItems} {/* Дополнительные элементы навигации, если есть */}

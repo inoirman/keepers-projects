@@ -18,6 +18,7 @@ import {
 	signOut as signOutFromSupabase,
 	useAuth,
 } from '@service-suite/auth-logic'
+import CookiesBanner from './components/CookiesBanner'
 
 const inter = Inter({
 	subsets: ['latin'],
@@ -107,6 +108,7 @@ export default function RootLayout({
 				<AuthManager supabase={supabase}>
 					<AppContent>{children}</AppContent>
 				</AuthManager>
+				<CookiesBanner />
 			</body>
 		</html>
 	)

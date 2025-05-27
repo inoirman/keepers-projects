@@ -114,7 +114,7 @@ export function DraftingArea({
 		return (
 			<section className='bg-surface p-4 sm:p-6 rounded-lg shadow-lg space-y-4'>
 				<h2 className='text-lg font-semibold text-text-base mb-3'>
-					Ваш черновик ответа (Итерация {currentDraft.iteration_number})
+					Ваш черновик ответа (Вариант {currentDraft.iteration_number})
 				</h2>
 				<OriginalTextDisplay
 					originalText={

@@ -1,15 +1,87 @@
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-	title: 'Postmaster AI',
-	description: 'Welcome to the Postmaster AI application!',
-}
-
 export default function Home() {
 	return (
-		<div>
-			<h1>Home</h1>
-			<p>Welcome to the Postmaster AI application!</p>
-		</div>
+		<main className='max-w-2xl mx-auto py-16 px-4 flex flex-col gap-8'>
+			<section>
+				<h1 className='text-3xl sm:text-4xl font-bold mb-3 text-primary'>
+					Postmaster AI — автоматизация рутинных писем
+				</h1>
+				<p className='text-lg text-text-muted mb-3'>
+					Postmaster AI — это сервис, который экономит ваше время за счёт
+					автоматизации обработки писем: перевод, краткое содержание, генерация
+					черновиков и финальных ответов — всё в одном окне, с минимальным
+					участием человека.
+				</p>
+			</section>
+
+			<section className='space-y-2'>
+				<h2 className='text-xl font-semibold'>Кому подойдёт сервис:</h2>
+				<ul className='list-disc pl-5 text-base text-text-base'>
+					<li>
+						Фрилансерам и предпринимателям, которым важно быстро реагировать на
+						запросы из-за рубежа
+					</li>
+					<li>
+						Иммигрантам и релокантам — для решения бюрократических задач на
+						чужом языке
+					</li>
+					<li>
+						Любым командам, кто ежедневно тратит время на разбор входящей
+						корреспонденции
+					</li>
+				</ul>
+			</section>
+
+			<section className='space-y-2'>
+				<h2 className='text-xl font-semibold'>Что умеет Postmaster AI:</h2>
+				<ul className='list-disc pl-5 text-base text-text-base'>
+					<li>Автоматически переводит и анализирует текст письма</li>
+					<li>
+						Генерирует черновики ответов на основе ваших идей и рекомендаций
+					</li>
+					<li>
+						Формирует итоговые письма для отправки — на нужном языке, по
+						стандарту деловой переписки
+					</li>
+					<li>
+						Все шаги прозрачны, вы всегда можете проверить и скорректировать
+						ответ
+					</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2 className='text-xl font-semibold'>Зачем всё это?</h2>
+				<p className='text-base text-text-base'>
+					Реальная цель — сэкономить вам часы жизни и снизить стресс от бумажной
+					рутины. Postmaster AI не заменяет человека, но снимает с вас то, что
+					отнимает силы ежедневно.
+				</p>
+			</section>
+
+			<section className='mt-8'>
+				<p className='text-sm text-text-muted text-center'>
+					По всем вопросам и поддержке — пишите на{' '}
+					<a
+						href='mailto:support@kiadev.net'
+						className='text-primary hover:underline'
+					>
+						support@kiadev.net
+					</a>
+				</p>
+			</section>
+
+			<section className='mt-8 text-center text-xs text-text-muted'>
+				{/* Placeholder для будущих legal pages */}
+				<a href='/privacy' className='underline text-primary mr-4'>
+					Политика конфиденциальности
+				</a>
+				<a href='/terms' className='underline text-primary mr-4'>
+					Пользовательское соглашение
+				</a>
+				<a href='/cookies' className='underline text-primary'>
+					Cookie Policy
+				</a>
+			</section>
+		</main>
 	)
 }

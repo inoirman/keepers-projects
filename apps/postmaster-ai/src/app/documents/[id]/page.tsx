@@ -84,7 +84,9 @@ export default function DocumentDetailPage() {
 						type: 'info',
 						duration: 2000,
 					})
-					setDocument(payload.new)
+					setDocument(prev =>
+						prev ? { ...prev, ...payload.new } : payload.new
+					)
 					if (payload.new.status === 'analysis_completed') {
 						addToast({ message: 'Анализ текста завершен!', type: 'success' })
 					}
@@ -151,11 +153,25 @@ export default function DocumentDetailPage() {
 		}
 	}, [authLoading, isAuthenticated, router, documentId])
 
+	useEffect(() => {
+		if (!document) return
+		// Обновляем drafts, если статус документа перешёл в "draft_completed"
+		if (
+			['draft_completed', 'pending_final_reply', 'reply_completed'].includes(
+				document.status
+			)
+		) {
+			fetchAndSetDrafts()
+		}
+		// Можно расширить: на любые переходы статусов, где нужен актуальный список
+		// Можно добавить guard: если drafts.length уже > 0, не обновлять, но проще — всегда обновлять
+	}, [document?.status])
+
 	const handleCreateDraft = async () => {
 		if (!document || !userIdea.trim()) return
 		setIsSubmitting(true)
 		try {
-			const response = await fetch('/api/drafts/create', {
+			const response = await fetch('/api/drafts', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -196,57 +212,90 @@ export default function DocumentDetailPage() {
 
 	const handleGenerateFinalAnswer = async (draftToFinalize: ReplyDraftType) => {
 		if (!draftToFinalize || !document?.id) return
+
+		addToast({
+			variant: 'confirm',
+			position: 'center-center',
+			message:
+				'Сгенерировать итоговое письмо на базе выбранного черновика? Это действие необратимо.',
+			type: 'warning',
+			onConfirm: async toastId => {
+				dismissToast(toastId)
+				setIsSubmitting(true)
+				try {
+					const response = await fetch('/api/drafts/finalize', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							draft_id: draftToFinalize.id,
+							document_id: document.id,
+						}),
+					})
+					const result = await response.json()
+					if (response.ok && result.data?.document) {
+						addToast({
+							message: 'Запрос на финальный ответ отправлен.',
+							type: 'success',
+						})
+					} else {
+						const errorMessage =
+							result.error?.message ||
+							'Неизвестная ошибка при генерации ответа.'
+						addToast({
+							message: `Ошибка генерации ответа: ${errorMessage}`,
+							type: 'error',
+						})
+					}
+				} catch (error: unknown) {
+					let errorMessage = 'Произошла сетевая ошибка или ошибка сервера.'
+					if (error instanceof Error) {
+						errorMessage = error.message
+					}
+					addToast({ message: `Ошибка: ${errorMessage}`, type: 'error' })
+					console.error('Generate final answer error:', error)
+				} finally {
+					setIsSubmitting(false)
+				}
+			},
+			onCancel: dismissToast,
+		})
+	}
+
+	const handleSelectDraftAsFinalWithConfirm = async (draft: ReplyDraftType) => {
 		setIsSubmitting(true)
 		try {
-			const response = await fetch('/api/drafts/finalize', {
+			const response = await fetch('/api/drafts/set-current-draft', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					draft_id: draftToFinalize.id,
-					document_id: document.id,
+					document_id: document?.id,
+					draft_id: draft.id,
 				}),
 			})
-			const result = await response.json() // Аналогично предполагаем структуру ответа
-
-			if (response.ok && result.data?.document) {
-				// Проверяем и data.document
+			const result = await response.json()
+			if (response.ok && result.success) {
+				setCurrentDraft(draft)
 				addToast({
-					message: 'Запрос на финальный ответ отправлен.',
-					type: 'success',
+					message: 'Черновик выбран для формирования итогового письма.',
+					type: 'info',
+					duration: 2000,
 				})
+				// Подписка на Realtime подхватит изменения в документе
 			} else {
-				const errorMessage =
-					result.error?.message || 'Неизвестная ошибка при генерации ответа.'
 				addToast({
-					message: `Ошибка генерации ответа: ${errorMessage}`,
+					message: `Ошибка при выборе черновика: ${result.error?.message || 'Неизвестная ошибка'}`,
 					type: 'error',
 				})
 			}
 		} catch (error: unknown) {
-			// ИЗМЕНЕНО: error: unknown
-			let errorMessage = 'Произошла сетевая ошибка или ошибка сервера.'
-			if (error instanceof Error) {
-				errorMessage = error.message
-			}
-			addToast({ message: `Ошибка: ${errorMessage}`, type: 'error' })
-			console.error('Generate final answer error:', error)
+			console.error('Error selecting draft as final:', error)
+			addToast({
+				message: `Ошибка сети:`,
+				type: 'error',
+			})
 		} finally {
 			setIsSubmitting(false)
 		}
-	}
-
-	const handleSelectDraftAsFinalWithConfirm = (draft: ReplyDraftType) => {
-		addToast({
-			variant: 'confirm', // Убедитесь, что ваш useToasts это поддерживает
-			message:
-				'Сгенерировать итоговое письмо на базе выбранного черновика? Это действие необратимо.',
-			type: 'warning',
-			onConfirm: toastId => {
-				dismissToast(toastId)
-				handleGenerateFinalAnswer(draft)
-			},
-			onCancel: dismissToast,
-		})
 	}
 
 	const handleCopyToClipboard = (text: string) => {

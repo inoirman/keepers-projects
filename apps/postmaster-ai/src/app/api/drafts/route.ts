@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 3. Вызов n8n webhook
-		const n8nWebhookUrl = process.env.NEXT_N8N_REPLY_WEBHOOK_URL
+		const n8nWebhookUrl = process.env.NEXT_N8N_ANALYZE_WEBHOOK_URL
 		if (n8nWebhookUrl) {
 			fetch(n8nWebhookUrl, {
 				method: 'POST',

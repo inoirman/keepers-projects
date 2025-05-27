@@ -72,11 +72,11 @@ export function AnalysisSidebar({
 									key={draft.id}
 									className={`bg-background border border-border rounded-lg p-3 transition-all
                     ${currentDraft && draft.id === currentDraft.id ? 'ring-2 ring-primary shadow-md' : 'hover:shadow-sm'}
-                    ${draft.is_source_for_final_reply ? 'opacity-70 border-green-500' : ''}
+                    ${draft.id === currentDraft?.id ? 'opacity-70 border-green-500' : ''}
                   `}
 								>
 									<div className='flex justify-between items-center text-xs mb-1 text-text-muted'>
-										<span>Итерация {draft.iteration_number}</span>
+										<span>Вариант {draft.iteration_number}</span>
 										<span className='text-gray-500'>
 											{new Date(draft.created_at).toLocaleDateString()}
 										</span>
@@ -88,7 +88,7 @@ export function AnalysisSidebar({
 									</p>
 									{document.status !== 'reply_completed' &&
 										document.status !== 'pending_final_reply' &&
-										!draft.is_source_for_final_reply && (
+										draft.id !== currentDraft?.id && (
 											<button
 												className='text-xs font-medium text-primary hover:underline disabled:opacity-50'
 												onClick={() => onSelectDraftAsFinal(draft)}
@@ -100,7 +100,7 @@ export function AnalysisSidebar({
 												Выбрать и сделать финальным
 											</button>
 										)}
-									{draft.is_source_for_final_reply && (
+									{draft.id === currentDraft?.id && (
 										<span className='text-xs font-medium text-green-600'>
 											Использован для ответа
 										</span>
