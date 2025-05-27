@@ -1,3 +1,4 @@
+import Image from 'next/image'
 export default function Home() {
 	return (
 		<main className='max-w-2xl mx-auto py-16 px-4 flex flex-col gap-8'>
@@ -68,6 +69,29 @@ export default function Home() {
 						support@kiadev.net
 					</a>
 				</p>
+			</section>
+
+			<section className='mt-8 text-center'>
+				<p className='text-text-muted mb-2'>
+					Если вам нравится мой труд и сервис оказался полезен,
+					<br />
+					вы всегда можете <b>угостить меня кофе</b>:
+				</p>
+				<a
+					href='https://www.buymeacoffee.com/kiadev'
+					target='_blank'
+					rel='noopener noreferrer'
+					className='inline-block transition-transform hover:scale-105 active:scale-95'
+				>
+					<Image
+						src='https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png'
+						alt='Buy Me A Coffee'
+						width={217}
+						height={60}
+						className='rounded-xl'
+						priority={false}
+					/>
+				</a>
 			</section>
 
 			<section className='mt-8 text-center text-xs text-text-muted'>
