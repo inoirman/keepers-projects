@@ -15,7 +15,7 @@ import {
 
 // Логика аутентификации
 import { createSupabaseBrowserClient } from '@/lib/supabase/client' // Клиент Supabase из нашего приложения
-import { signUpWithEmail } from '@service-suite/auth-logic'
+import { signUpWithEmail, useAuthStore } from '@service-suite/auth-logic'
 
 // Метаданные для страницы (если нужно)
 // import type { Metadata } from 'next';
@@ -26,6 +26,8 @@ export default function RegisterPage() {
 	const { addToast } = useToasts()
 	const supabase = createSupabaseBrowserClient()
 	const [isLoading, setIsLoading] = useState(false)
+
+	const { fetchProfile } = useAuthStore()
 
 	const handleRegisterSubmit = async (credentials: AuthCredentials) => {
 		setIsLoading(true)
@@ -57,6 +59,8 @@ export default function RegisterPage() {
 					name: credentials.name, // Сохраняем имя пользователя
 					email: credentials.email, // Сохраняем email
 				})
+
+				await fetchProfile(supabase, user.id) // Обновляем профиль в состоянии
 			}
 
 			addToast({
