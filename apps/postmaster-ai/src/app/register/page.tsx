@@ -50,6 +50,15 @@ export default function RegisterPage() {
 		})
 
 		if (response.success) {
+			const user = response.data?.user
+			if (user) {
+				await supabase.from('profiles').upsert({
+					id: user.id,
+					name: credentials.name, // Сохраняем имя пользователя
+					email: credentials.email, // Сохраняем email
+				})
+			}
+
 			addToast({
 				message: response.data?.session
 					? 'Вы успешно зарегистрированы и вошли в систему!'

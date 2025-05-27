@@ -6,6 +6,7 @@ export interface AuthCredentials {
 	email: string
 	password?: string // Пароль может быть опциональным, если форма для чего-то другого (например, OAuth старт)
 	confirmPassword?: string
+	name: string
 }
 
 interface AuthFormProps {
@@ -26,6 +27,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 	const [email, setEmail] = React.useState('')
 	const [password, setPassword] = React.useState('')
 	const [confirmPassword, setConfirmPassword] = React.useState('')
+	const [name, setName] = React.useState('')
 
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
@@ -33,7 +35,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 		// так как там будет доступ к системе уведомлений (useToasts).
 		// Либо передавать функцию для показа ошибок как пропс.
 		// Пока просто собираем данные:
-		onSubmit({ email, password, confirmPassword })
+		onSubmit({ name, email, password, confirmPassword })
 	}
 
 	const defaultSubmitText =
@@ -41,6 +43,26 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
 	return (
 		<form onSubmit={handleSubmit} className='space-y-6'>
+			<div>
+				<label
+					htmlFor='auth-name'
+					className='block text-sm font-medium text-text-muted mb-1'
+				>
+					Имя пользователя
+				</label>
+				<input
+					id='auth-name'
+					name='name'
+					type='text'
+					autoComplete='name'
+					required
+					value={name}
+					onChange={e => setName(e.target.value)}
+					className='mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm bg-surface text-text-base disabled:opacity-70'
+					placeholder='Ваше имя'
+					disabled={isLoading}
+				/>
+			</div>
 			<div>
 				<label
 					htmlFor='auth-email'
