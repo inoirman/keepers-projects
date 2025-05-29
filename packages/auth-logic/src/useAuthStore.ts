@@ -22,26 +22,37 @@ interface AuthState {
 	fetchProfile: (supabase: SupabaseClient, userId: string) => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>(set => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
+	// Добавил get для доступа к текущему состоянию
 	user: null,
 	profile: null,
 	session: null,
 	isLoading: true,
-	setUserAndSession: (user, session) =>
-		set({ user, session, isLoading: false }),
-	setLoading: isLoading => set({ isLoading }),
-	setProfile: profile => set({ profile }),
+	setUserAndSession: (user, session) => {
+		set({ user, session, isLoading: false })
+	},
+	setLoading: isLoading => {
+		set({ isLoading })
+	},
+	setProfile: profile => {
+		set({ profile })
+	},
 	fetchProfile: async (supabase, userId) => {
-		const { data, error } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('id', userId)
-			.maybeSingle()
-		if (error) {
-			console.error('Ошибка при получении профиля:', error.message)
+		try {
+			// Добавим try-catch для большей надежности
+			const { data, error, status } = await supabase
+				.from('profiles')
+				.select('*')
+				.eq('id', userId)
+				.maybeSingle()
+
+			if (error && status !== 406) {
+				set({ profile: null })
+			} else {
+				set({ profile: data || null })
+			}
+		} catch (e) {
 			set({ profile: null })
-		} else {
-			set({ profile: data || null })
 		}
 	},
 }))

@@ -24,10 +24,12 @@ const inter = Inter({
 	subsets: ['latin'],
 })
 
+const supabase = createSupabaseBrowserClient()
+
 function AppContent({ children }: { children: React.ReactNode }) {
 	const { addToast } = useToasts()
 	const router = useRouter()
-	const supabase = createSupabaseBrowserClient()
+
 	const { user, isLoading } = useAuth()
 
 	const toasts = useToasts().toasts
@@ -100,8 +102,6 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode
 }>) {
-	const supabase = createSupabaseBrowserClient()
-
 	return (
 		<html lang='en'>
 			<body className={` ${inter.className} flex flex-col min-h-screen`}>
