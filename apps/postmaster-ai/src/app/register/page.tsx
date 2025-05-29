@@ -1,114 +1,117 @@
 // apps/postmaster-ai/src/app/register/page.tsx
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-// Наши UI компоненты и типы
+// Убедитесь, что пути импорта корректны
+import { useScopedI18nClient } from '@/lib/i18n/client' // Наш клиентский хук i18n
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import {
-	AuthCard,
-	AuthCredentials,
 	AuthForm,
-	useToasts,
-} from '@service-suite/ui'
-
-// Логика аутентификации
-import { createSupabaseBrowserClient } from '@/lib/supabase/client' // Клиент Supabase из нашего приложения
-import { signUpWithEmail, useAuthStore } from '@service-suite/auth-logic'
-
-// Метаданные для страницы (если нужно)
-// import type { Metadata } from 'next';
-// export const metadata: Metadata = { title: 'Регистрация - PostmasterAI' };
+	type AuthCredentials,
+	type AuthFormTranslations,
+} from '@service-suite/ui/src/components/auth/AuthForm'
+import { useToasts } from '@service-suite/ui/src/hooks/useToasts'
+import Link from 'next/link'
 
 export default function RegisterPage() {
 	const router = useRouter()
+	const tAuthForm = useScopedI18nClient('authForm') // Получаем 't' функцию
 	const { addToast } = useToasts()
-	const supabase = createSupabaseBrowserClient()
+
 	const [isLoading, setIsLoading] = useState(false)
+	const supabase = createSupabaseBrowserClient()
 
-	const { fetchProfile } = useAuthStore()
-
-	const handleRegisterSubmit = async (credentials: AuthCredentials) => {
+	const handleRegister = async (credentials: AuthCredentials) => {
 		setIsLoading(true)
-
-		if (
-			!credentials.password ||
-			credentials.password !== credentials.confirmPassword
-		) {
-			addToast({
-				message: 'Пароли не совпадают или не введены.',
-				type: 'error',
-			})
+		if (credentials.password !== credentials.confirmPassword) {
+			addToast({ type: 'error', message: 'Пароли не совпадают!' }) // TODO: Перевести
+			setIsLoading(false)
+			return
+		}
+		if (!credentials.password) {
+			addToast({ type: 'error', message: 'Пароль обязателен.' }) // TODO: Перевести
 			setIsLoading(false)
 			return
 		}
 
-		const response = await signUpWithEmail(supabase, {
-			email: credentials.email,
-			password: credentials.password,
-			// Тут можно передавать options, если нужно, например, data для профиля
-			// options: { data: { full_name: 'Test User' } }
-		})
-
-		if (response.success) {
-			const user = response.data?.user
-			if (user) {
-				await supabase.from('profiles').upsert({
-					id: user.id,
-					name: credentials.name, // Сохраняем имя пользователя
-					email: credentials.email, // Сохраняем email
-				})
-
-				await fetchProfile(supabase, user.id) // Обновляем профиль в состоянии
-			}
-
-			addToast({
-				message: response.data?.session
-					? 'Вы успешно зарегистрированы и вошли в систему!'
-					: 'Регистрация успешна! Пожалуйста, проверьте вашу почту для подтверждения.',
-				type: 'success',
-				duration: 7000, // Даем больше времени прочитать, если нужно подтверждение
+		try {
+			const { error } = await supabase.auth.signUp({
+				email: credentials.email,
+				password: credentials.password,
+				options: {
+					// Вы можете передать 'name' в user_metadata, если хотите
+					data: {
+						name: credentials.name,
+						// другие данные для таблицы profiles при создании пользователя,
+						// если у вас настроены триггеры или вы их обработаете позже
+					},
+				},
 			})
 
-			if (response.data?.session) {
-				// Пользователь сразу вошел (например, email confirmation отключен в Supabase)
-				router.push('/profile') // Или на главную, или куда настроено
+			if (error) {
+				addToast({
+					type: 'error',
+					message: `Ошибка регистрации: ${error.message}`,
+				}) // TODO: Перевести
 			} else {
-				// Требуется подтверждение email
-				// Можно перенаправить на страницу логина с сообщением или оставить здесь
-				router.push('/login?message=confirm-email')
+				addToast({
+					type: 'success',
+					message:
+						'Регистрация успешна! Пожалуйста, проверьте вашу почту для подтверждения.',
+				}) // TODO: Перевести
+				router.push('/login') // Или на страницу "проверьте почту"
 			}
-		} else {
+		} catch (e: unknown) {
+			console.error('Registration error:', e)
 			addToast({
-				message: `Ошибка регистрации: ${response.error?.message || 'Неизвестная ошибка'}`,
 				type: 'error',
-			})
+				message: `Непредвиденная ошибка`,
+			}) // TODO: Перевести
 		}
 		setIsLoading(false)
 	}
 
+	// Собираем объект с переводами для AuthForm
+	const authFormTranslations: AuthFormTranslations = {
+		usernameLabel: tAuthForm('usernameLabel'),
+		usernamePlaceholder: tAuthForm('usernamePlaceholder'),
+		emailLabel: tAuthForm('emailLabel'),
+		emailPlaceholder: tAuthForm('emailPlaceholder'),
+		passwordLabel: tAuthForm('passwordLabel'),
+		passwordPlaceholder: tAuthForm('passwordPlaceholder'),
+		confirmPasswordLabel: tAuthForm('confirmPasswordLabel'),
+		loginButton: tAuthForm('loginButton'), // Нужен для типа, но не для текста кнопки
+		registerButton: tAuthForm('registerButton'),
+		processingButton: tAuthForm('processingButton'),
+	}
+
 	return (
-		<AuthCard
-			title='Создание аккаунта'
-			footerContent={
-				<>
-					Уже есть аккаунт?{' '}
-					<Link
-						href='/login'
-						className='font-medium text-primary hover:opacity-80 transition-opacity'
-					>
-						Войти
-					</Link>
-				</>
-			}
-		>
-			<AuthForm
-				formType='register'
-				onSubmit={handleRegisterSubmit}
-				isLoading={isLoading}
-				submitButtonText='Зарегистрироваться'
-			/>
-		</AuthCard>
+		<div className='flex flex-col items-center justify-center min-h-screen py-12 bg-background'>
+			<div className='w-full max-w-md p-8 space-y-8 bg-surface shadow-xl rounded-lg'>
+				<div>
+					<h2 className='mt-6 text-center text-3xl font-extrabold text-text-base'>
+						{tAuthForm('registerButton')} {/* Заголовок страницы */}
+					</h2>
+				</div>
+				<AuthForm
+					formType='register' // <--- Тип формы для регистрации
+					onSubmit={handleRegister}
+					isLoading={isLoading}
+					translations={authFormTranslations} // <--- Передаем переводы
+				>
+					<div className='text-sm text-center mt-4'>
+						<span className='text-text-muted'>Уже есть аккаунт? </span>
+						{/* TODO: Перевести */}
+						<Link
+							href='/login'
+							className='font-medium text-primary hover:underline'
+						>
+							Войти {/* TODO: Перевести */}
+						</Link>
+					</div>
+				</AuthForm>
+			</div>
+		</div>
 	)
 }

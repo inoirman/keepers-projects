@@ -1,104 +1,108 @@
-// apps/postmaster-ai/src/app/login/page.tsx
+// apps/postmaster-ai/src/app/[locale]/login/page.tsx
 'use client'
 
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
-
-// Наши UI компоненты и типы
-import {
-	AuthCard,
-	AuthCredentials,
-	AuthForm,
-	useToasts,
-} from '@service-suite/ui'
-
-// Логика аутентификации
+import { useRouter } from 'next/navigation' // Для App Router
+import { useState } from 'react'
+// Убедитесь, что импорты из вашего UI пакета и i18n настроек корректны
+import { useScopedI18nClient } from '@/lib/i18n/client' // Наш клиентский хук i18n
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { signInWithEmail } from '@service-suite/auth-logic'
-
-// Метаданные для страницы (если нужно)
-// import type { Metadata } from 'next';
-// export const metadata: Metadata = { title: 'Вход - PostmasterAI' };
+import {
+	AuthForm,
+	type AuthCredentials,
+	type AuthFormTranslations,
+} from '@service-suite/ui/src/components/auth/AuthForm' // Проверьте этот путь!
+import { useToasts } from '@service-suite/ui/src/hooks/useToasts' // Проверьте этот путь!
+import Link from 'next/link' // Для ссылки на регистрацию
 
 export default function LoginPage() {
 	const router = useRouter()
-	const searchParams = useSearchParams()
+	const tAuthForm = useScopedI18nClient('authForm') // Получаем 't' функцию для скоупа 'authForm'
 	const { addToast } = useToasts()
-	const supabase = createSupabaseBrowserClient()
+
 	const [isLoading, setIsLoading] = useState(false)
+	const supabase = createSupabaseBrowserClient()
 
-	useEffect(() => {
-		const message = searchParams.get('message')
-		if (message === 'confirm-email') {
-			addToast({
-				message:
-					'Пожалуйста, проверьте вашу почту и подтвердите регистрацию, чтобы войти.',
-				type: 'info',
-				duration: 8000,
-			})
-		}
-		// Тут же можно добавить проверку, если пользователь УЖЕ залогинен,
-		// и сразу перенаправлять его на /profile. Это сделаем позже с хуком useAuth.
-	}, [searchParams, addToast, router])
-
-	const handleLoginSubmit = async (credentials: AuthCredentials) => {
+	const handleLogin = async (credentials: AuthCredentials) => {
 		setIsLoading(true)
-
 		if (!credentials.password) {
-			addToast({ message: 'Пароль не введен.', type: 'error' })
+			// Пароль обязателен для логина
+			addToast({ type: 'error', message: 'Пожалуйста, введите пароль.' }) // TODO: Перевести эту строку
 			setIsLoading(false)
 			return
 		}
-
-		const response = await signInWithEmail(supabase, {
-			email: credentials.email,
-			password: credentials.password,
-		})
-
-		if (response.success && response.data?.user) {
-			addToast({ message: 'Вы успешно вошли в систему!', type: 'success' })
-			router.push('/profile') // Или на другую страницу после логина
-		} else {
-			addToast({
-				message: `Ошибка входа: ${response.error?.message || 'Неверный email или пароль.'}`,
-				type: 'error',
+		try {
+			const { error } = await supabase.auth.signInWithPassword({
+				email: credentials.email,
+				password: credentials.password,
 			})
+
+			if (error) {
+				// TODO: Перевести сообщения об ошибках Supabase, если это возможно/нужно
+				addToast({ type: 'error', message: `Ошибка входа: ${error.message}` })
+			} else {
+				addToast({ type: 'success', message: 'Вход выполнен успешно!' }) // TODO: Перевести
+				router.push('/') // Перенаправляем на главную (или дашборд)
+				router.refresh() // Обновить данные сессии на стороне сервера
+			}
+		} catch (e: unknown) {
+			console.log('Login error:', e)
+
+			addToast({
+				type: 'error',
+				message: `Непредвиденная ошибка`,
+			}) // TODO: Перевести
 		}
 		setIsLoading(false)
 	}
 
+	// Собираем объект с переводами для AuthForm, используя нашу 't' функцию
+	const authFormTranslations: AuthFormTranslations = {
+		usernameLabel: tAuthForm('usernameLabel'), // Не используется для логина, но тип требует
+		usernamePlaceholder: tAuthForm('usernamePlaceholder'), // Не используется
+		emailLabel: tAuthForm('emailLabel'),
+		emailPlaceholder: tAuthForm('emailPlaceholder'),
+		passwordLabel: tAuthForm('passwordLabel'),
+		passwordPlaceholder: tAuthForm('passwordPlaceholder'),
+		confirmPasswordLabel: tAuthForm('confirmPasswordLabel'), // Не используется
+		loginButton: tAuthForm('loginButton'),
+		registerButton: tAuthForm('registerButton'), // Не используется для текста кнопки, но может быть для ссылки
+		processingButton: tAuthForm('processingButton'),
+	}
+
 	return (
-		<AuthCard
-			title='Вход в PostmasterAI'
-			footerContent={
-				<>
-					Впервые у нас?{' '}
-					<Link
-						href='/register'
-						className='font-medium text-primary hover:opacity-80 transition-opacity'
-					>
-						Создать аккаунт
-					</Link>
-				</>
-			}
-		>
-			<AuthForm
-				formType='login'
-				onSubmit={handleLoginSubmit}
-				isLoading={isLoading}
-				submitButtonText='Войти'
-			>
-				{/* Сюда можно добавить ссылку "Забыли пароль?" если нужно, используя children слот AuthForm */}
-				<div className='text-sm text-right mt-2'>
-					<Link
-						href='/forgot-password'
-						className='font-medium text-primary hover:opacity-80 transition-opacity'
-					>
-						Забыли пароль?
-					</Link>
+		<div className='flex flex-col items-center justify-center min-h-screen py-12 bg-background'>
+			{' '}
+			{/* Пример использования Tailwind классов */}
+			<div className='w-full max-w-md p-8 space-y-8 bg-surface shadow-xl rounded-lg'>
+				{' '}
+				{/* Пример */}
+				<div>
+					{/* Заголовок страницы тоже можно перевести, если есть ключ в локалях */}
+					<h2 className='mt-6 text-center text-3xl font-extrabold text-text-base'>
+						{tAuthForm('loginButton')}{' '}
+						{/* Используем текст кнопки входа как заголовок */}
+					</h2>
 				</div>
-			</AuthForm>
-		</AuthCard>
+				<AuthForm
+					formType='login'
+					onSubmit={handleLogin}
+					isLoading={isLoading}
+					translations={authFormTranslations} // Передаем объект с переводами
+				>
+					{/* Дополнительные ссылки под формой */}
+					<div className='text-sm text-center mt-4'>
+						<span className='text-text-muted'>
+							{tAuthForm('noAccountPrompt')}{' '}
+						</span>
+						<Link
+							href='/register'
+							className='font-medium text-primary hover:underline'
+						>
+							{tAuthForm('signUpLinkText')}
+						</Link>
+					</div>
+				</AuthForm>
+			</div>
+		</div>
 	)
 }
