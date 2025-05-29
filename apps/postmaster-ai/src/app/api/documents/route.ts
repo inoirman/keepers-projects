@@ -24,14 +24,13 @@ async function createSupabaseServerClientOnRoute() {
 						options: CookieOptions
 					}[]
 				) {
-					cookiesToSet.forEach(({ name, value, options }) => {
+					cookiesToSet.forEach(({ name }) => {
 						try {
 							// cookieStore.set(name, value, options); // По-прежнему вызовет ошибку, т.к. ReadonlyRequestCookies read-only
 							console.warn(
 								`(Supabase server client on Route Handler) Attempted to set cookie '${name}' using setAll. ` +
 									`This will not modify the response cookies directly in a Route Handler.`
 							)
-							console.log(`Some info about cookie: ${name} ${value} ${options}`)
 						} catch (error) {
 							console.error(
 								`(Supabase server client on Route Handler) Error setting cookie '${name}':`,
@@ -166,9 +165,6 @@ export async function POST(request: NextRequest) {
 					)
 					// Можно обновить статус документа в БД на 'n8n_trigger_failed', если нужно
 				})
-				console.log(
-					`API: N8N webhook triggered for document ${newDocument.id} with action 'analyze_text'.`
-				)
 			} catch (error) {
 				// Этот catch маловероятен для fetch без await, но на всякий случай
 				console.error(

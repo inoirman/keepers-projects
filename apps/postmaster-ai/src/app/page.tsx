@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 export default function Home() {
 	return (
 		<main className='max-w-2xl mx-auto py-16 px-4 flex flex-col gap-8'>
@@ -96,15 +97,15 @@ export default function Home() {
 
 			<section className='mt-8 text-center text-xs text-text-muted'>
 				{/* Placeholder для будущих legal pages */}
-				<a href='/privacy' className='underline text-primary mr-4'>
+				<Link href='/privacy' className='underline text-primary mr-4'>
 					Политика конфиденциальности
-				</a>
-				<a href='/terms' className='underline text-primary mr-4'>
+				</Link>
+				<Link href='/terms' className='underline text-primary mr-4'>
 					Пользовательское соглашение
-				</a>
-				<a href='/cookies' className='underline text-primary'>
+				</Link>
+				<Link href='/cookies' className='underline text-primary'>
 					Cookie Policy
-				</a>
+				</Link>
 			</section>
 		</main>
 	)

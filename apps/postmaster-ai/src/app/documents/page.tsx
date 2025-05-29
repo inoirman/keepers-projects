@@ -63,8 +63,7 @@ export default function DocumentsPage() {
 						// Фильтр по user_id, если возможно и нужно для оптимизации (RLS должна отсекать чужие)
 						// filter: `user_id=eq.${user.id}` // может не сработать для DELETE если запись уже удалена
 					},
-					async payload => {
-						console.log('Documents table changed:', payload)
+					async () => {
 						addToast({
 							message: 'Список документов обновлен!',
 							type: 'info',
@@ -77,23 +76,24 @@ export default function DocumentsPage() {
 				)
 				.subscribe((status, err) => {
 					if (status === 'SUBSCRIBED') {
-						console.log('Subscribed to Realtime updates for documents list')
 					}
 					if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-						console.error(
-							'Realtime subscription error for documents list:',
-							err || status
-						)
 						addToast({
 							message: 'Ошибка Realtime-подписки на список документов.',
 							type: 'warning',
+						})
+					}
+					if (err) {
+						console.error('Realtime subscription error:', err)
+						addToast({
+							message: `Ошибка подписки на обновления документов: ${err.message}`,
+							type: 'error',
 						})
 					}
 				})
 
 			return () => {
 				supabase.removeChannel(channel)
-				console.log('Unsubscribed from Realtime updates for documents list')
 			}
 		}
 	}, [authLoading, isAuthenticated, user, supabase, addToast, router]) // Добавил router в зависимости, если используется внутри useEffect

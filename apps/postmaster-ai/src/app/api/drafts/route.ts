@@ -12,23 +12,6 @@ async function createSupabaseServerClientOnRoute() {
 				getAll() {
 					return cookieStore.getAll()
 				},
-				setAll(cookiesToSet) {
-					// Как и раньше — только log
-					cookiesToSet.forEach(({ name, value, options }) => {
-						try {
-							console.warn(
-								`(Supabase server client on Route Handler) Attempted to set cookie '${name}' using setAll. ` +
-									`This will not modify the response cookies directly in a Route Handler.`
-							)
-							console.log(`Some info about cookie: ${name} ${value} ${options}`)
-						} catch (error) {
-							console.error(
-								`(Supabase server client on Route Handler) Error setting cookie '${name}':`,
-								error
-							)
-						}
-					})
-				},
 			},
 		}
 	)

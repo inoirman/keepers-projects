@@ -78,7 +78,6 @@ export default function DocumentDetailPage() {
 					filter: `id=eq.${documentId}`,
 				}, // Добавлен filter
 				payload => {
-					console.log('Document updated via Realtime:', payload.new)
 					addToast({
 						message: 'Данные документа обновлены!',
 						type: 'info',
@@ -95,12 +94,11 @@ export default function DocumentDetailPage() {
 			)
 			.subscribe((status, err) => {
 				if (status === 'SUBSCRIBED')
-					console.log(`Subscribed to Realtime for document ${documentId}`)
-				if (err)
-					console.error(
-						`Realtime subscription error for document ${documentId}:`,
-						err
-					)
+					if (err)
+						console.error(
+							`Realtime subscription error for document ${documentId}:`,
+							err
+						)
 			})
 
 		return () => {

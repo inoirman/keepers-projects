@@ -25,9 +25,6 @@ export function RequestLimitForm({
 				email: email ?? '',
 				reason,
 			}
-
-			console.log('Sending request with payload:', payload)
-			console.log('Webhook URL:', WEBHOOK_URL)
 			const res = await fetch(WEBHOOK_URL as string, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
